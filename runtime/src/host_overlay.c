@@ -151,6 +151,7 @@ unsigned psx_host_video_restart_bits(const PsxHostVideoSettings *boot,
 /* ---- seamless relaunch ----------------------------------------------------- */
 #if defined(_WIN32)
 #include <process.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
