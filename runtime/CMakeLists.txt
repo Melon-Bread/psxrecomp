@@ -774,6 +774,9 @@ if(BUILD_TESTING)
     target_include_directories(host_overlay_test PRIVATE include src)
     find_package(Threads REQUIRED)
     target_link_libraries(host_overlay_test PRIVATE Threads::Threads)
+    if(WIN32)
+        target_link_libraries(host_overlay_test PRIVATE shell32)
+    endif()
     add_test(NAME host_overlay_test COMMAND host_overlay_test)
 
     add_executable(gte_register_access_test
