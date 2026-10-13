@@ -106,6 +106,19 @@ int psx_disc_tray_cycle(int disc_1based, int origin)
     return result;
 }
 
+int psx_disc_tray_auto_poll(int requested, int ready)
+{
+    static int episode_disc, attempted;
+    if (requested != episode_disc) {
+        episode_disc = requested;
+        attempted = 0;
+    }
+    if (requested <= 0 || !ready || attempted) return -1;
+    if (requested == psx_disc_tray_mounted_disc()) return -1;
+    attempted = 1;
+    return psx_disc_tray_cycle(requested, PSX_DISC_TRAY_ORIGIN_AUTO);
+}
+
 const char *psx_disc_tray_result_name(int result)
 {
     switch (result) {
@@ -126,6 +139,7 @@ const char *psx_disc_tray_origin_name(int origin)
     case PSX_DISC_TRAY_ORIGIN_DEBUG_SELECT:    return "debug_select";
     case PSX_DISC_TRAY_ORIGIN_DEBUG_REINSERT:  return "debug_reinsert";
     case PSX_DISC_TRAY_ORIGIN_DEBUG_MENU:      return "debug_menu";
+    case PSX_DISC_TRAY_ORIGIN_AUTO:            return "auto";
     default:                                   return "unknown";
     }
 }

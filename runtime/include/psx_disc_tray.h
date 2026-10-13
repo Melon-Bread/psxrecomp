@@ -35,7 +35,8 @@ typedef enum PsxDiscTrayOrigin {
     PSX_DISC_TRAY_ORIGIN_HOTKEY_REINSERT,   /* Ctrl+C reinsert hotkey */
     PSX_DISC_TRAY_ORIGIN_DEBUG_SELECT,      /* debug server disc_select */
     PSX_DISC_TRAY_ORIGIN_DEBUG_REINSERT,    /* debug server cd_reinsert */
-    PSX_DISC_TRAY_ORIGIN_DEBUG_MENU         /* debug server disc_menu accept */
+    PSX_DISC_TRAY_ORIGIN_DEBUG_MENU,        /* debug server disc_menu accept */
+    PSX_DISC_TRAY_ORIGIN_AUTO               /* verified title request */
 } PsxDiscTrayOrigin;
 
 typedef enum PsxDiscTrayResult {
@@ -56,6 +57,10 @@ typedef enum PsxDiscTrayResult {
  * Returns a PsxDiscTrayResult. Only PSX_DISC_TRAY_OK opened the lid, except
  * PSX_DISC_TRAY_ERR_OPEN_FAILED, which opened it and found no readable image. */
 int psx_disc_tray_cycle(int disc_1based, int origin);
+/* Main-thread VBlank policy. requested=0 ends a request episode. Readiness
+ * may change without rearming it. Returns -1 when no attempt was made, else
+ * PsxDiscTrayResult. Same mounted disc never cycles automatically. */
+int psx_disc_tray_auto_poll(int requested, int ready);
 
 /* Host notification after a successful DISC CHANGE (not after a same-media
  * reinsert). path is the roster entry now mounted. Called on the emu thread,

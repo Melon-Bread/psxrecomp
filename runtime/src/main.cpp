@@ -8589,6 +8589,16 @@ static NetplayVblankEpilogue sdl_vblank_present_body(void) {
                                  &g_runtime_perf.provider_poll_ticks);
     }
 
+    /* Title-owned request detection, shared tray policy, emulation-thread only.
+     * Run even when presentation is skipped by headless/turbo paths. */
+    {
+        int ready = 0;
+        const int requested = mod_runtime_disc_request(&ready);
+        const int result = psx_disc_tray_auto_poll(requested, ready);
+        if (result > PSX_DISC_TRAY_OK)
+            host_osd_push("Automatic disc change failed. Open the game menu to choose a disc.", 5000);
+    }
+
     /* Direct-shortcut claims are settled before any shortcut poll or pad
      * sample this frame (no-op unless a title allowed a direct shortcut). */
     direct_shortcut_claim_update();

@@ -54,6 +54,28 @@ int main(void) {
     assert(psx_disc_tray_cycle(0, PSX_DISC_TRAY_ORIGIN_HOTKEY_REINSERT) == PSX_DISC_TRAY_ERR_NETPLAY);
     assert(reinserts == 0 && mounted == 2);
     online = 0;
+    psx_disc_tray_auto_poll(0, 0);
+    int before = opens;
+    assert(psx_disc_tray_auto_poll(3, 0) == -1 && opens == before);
+    assert(psx_disc_tray_auto_poll(3, 1) == PSX_DISC_TRAY_OK && mounted == 3);
+    assert(psx_disc_tray_auto_poll(3, 1) == -1 && opens == before + 1);
+    psx_disc_tray_auto_poll(0, 0);
+    missing = 1;
+    assert(psx_disc_tray_auto_poll(4, 1) == PSX_DISC_TRAY_ERR_OPEN_FAILED);
+    before = opens;
+    psx_disc_tray_auto_poll(4, 0);
+    assert(psx_disc_tray_auto_poll(4, 1) == -1 && opens == before);
+    missing = 0;
+    assert(psx_disc_tray_auto_poll(4, 1) == -1); /* Manual fallback, no retry loop. */
+    assert(psx_disc_tray_cycle(4, PSX_DISC_TRAY_ORIGIN_MENU) == PSX_DISC_TRAY_OK);
+    psx_disc_tray_auto_poll(0, 0);
+    assert(psx_disc_tray_auto_poll(4, 1) == -1); /* Already inserted. */
+    online = 1;
+    assert(psx_disc_tray_auto_poll(1, 1) == PSX_DISC_TRAY_ERR_NETPLAY);
+    assert(mounted == 4);
+    online = 0;
+    psx_disc_tray_auto_poll(0, 0);
+    assert(psx_disc_tray_auto_poll(1, 1) == PSX_DISC_TRAY_OK && mounted == 1);
     /* Always-on ring wraps and retains the latest result in sequence order. */
     for (int i = 0; i < 40; ++i) psx_disc_tray_cycle(5, PSX_DISC_TRAY_ORIGIN_DEBUG_SELECT);
     const PsxDiscTrayEvent *events;

@@ -45,3 +45,19 @@ Disc 1 -> 4 -> 1, repeated open/close, and a real Disc 4 load prompt completing
 into the Moon field through the shared tray. UI model/keymap tests pass; shared
 UI desktop/touch layout tests pass. Physical-controller and Vulkan/software
 visual checks remain for the staged playtest.
+
+## Optional automatic switching
+
+A title plugin can register `psx_mod_set_disc_request_provider`. It returns the
+requested roster number throughout the guest's disc-request mode, separately
+reporting whether the guest has reached a safe lid-wait state. The framework
+polls this at VBlank and uses the same tray as manual insertion. The title owns
+all guest addresses and code guards; the framework contains no title checks.
+
+A request gets one automatic attempt, even if its readiness changes later.
+A failed image open displays an error and leaves manual selection available.
+No request, an already-mounted disc, an inactive plugin, boot, and netplay do
+not trigger a change. Providers clear when the mod session resets or activates.
+`disc_tray_log` reads the always-on ring, including `origin: auto` events.
+
+Tracked by `beads-eio.3.342`.

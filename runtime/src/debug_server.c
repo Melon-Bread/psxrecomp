@@ -13914,6 +13914,29 @@ static void handle_cd_read_log(int id, const char *json)
  * is what a player pressing eject would get.
  */
 
+static void handle_disc_tray_log(int id, const char *json)
+{
+    (void)json;
+    const PsxDiscTrayEvent *events;
+    const uint64_t total = psx_disc_tray_log(&events);
+    const uint64_t first = total > PSX_DISC_TRAY_LOG_CAP ? total - PSX_DISC_TRAY_LOG_CAP : 0;
+    char buf[12288];
+    int w = snprintf(buf, sizeof buf, "{\"id\":%d,\"ok\":true,\"total\":%llu,\"events\":[",
+                     id, (unsigned long long)total);
+    for (uint64_t n = first; n < total; ++n) {
+        const PsxDiscTrayEvent *e = &events[n % PSX_DISC_TRAY_LOG_CAP];
+        w += snprintf(buf + w, sizeof buf - (size_t)w,
+            "%s{\"seq\":%llu,\"cycle\":%llu,\"origin\":\"%s\",\"requested\":%d,"
+            "\"from\":%d,\"to\":%d,\"result\":\"%s\",\"rewind_dropped\":%d}",
+            n == first ? "" : ",", (unsigned long long)e->seq,
+            (unsigned long long)e->cycle, psx_disc_tray_origin_name(e->origin),
+            e->requested, e->from_disc, e->to_disc, psx_disc_tray_result_name(e->result),
+            e->rewind_dropped);
+    }
+    snprintf(buf + w, sizeof buf - (size_t)w, "]}");
+    send_fmt("%s", buf);
+}
+
 static void handle_runtime_menu(int id, const char *json)
 {
     char op[32] = {0};
@@ -16290,6 +16313,7 @@ static const CmdEntry s_commands[] = {
     { "overlay_dump",      handle_overlay_dump },
     { "cd_read_log",       handle_cd_read_log },
     { "runtime_menu",      handle_runtime_menu },
+    { "disc_tray_log",     handle_disc_tray_log },
     { "disc_select",       handle_disc_select },
     { "cd_reinsert",       handle_cd_reinsert },
     { "overlay_loader_status", handle_overlay_loader_status },
