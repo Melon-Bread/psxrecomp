@@ -775,7 +775,7 @@ static RuntimeConfig parse_runtime_block(const toml::value& cfg, const fs::path&
         // game root. The runtime parses it and logs (and skips) a bad one.
         if (video.contains("post_shader")) {
             const std::string ps = toml::find<std::string>(video, "post_shader");
-            if (!ps.empty()) rt.video_post_shader = PSXRecompV4::host_resolve(root, ps);
+            if (!ps.empty()) rt.video_post_shader = PSXRecompV4::host_resolve(root, ps).string();
         }
         if (video.contains("supersample")) {
             const auto& v = toml::find(video, "supersample");
