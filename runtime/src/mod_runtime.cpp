@@ -2756,10 +2756,15 @@ extern "C" int psx_mod_read_disc_file(const char* path, void* buffer,
         if (capacity < bytes) return 0;
         uint8_t sector[2048];
         for (uint32_t offset = 0; offset < bytes; offset += 2048u) {
+            /* Plugin callbacks may read a large archive during gameplay.
+             * Account for host I/O just as the resident-sector reader does;
+             * otherwise its first guest instruction can trip the watchdog. */
+            if (g_progress_hook && !(offset & ((2048u * 1024u) - 1u))) g_progress_hook();
             if (!read_effective_user_sector(reader, lba + offset / 2048u, sector)) return 0;
             const uint32_t count = std::min(2048u, bytes - offset);
             std::memcpy(static_cast<uint8_t*>(buffer) + offset, sector, count);
         }
+        if (g_progress_hook) g_progress_hook();
         *size = bytes;
         return 1;
     } catch (...) { return 0; }

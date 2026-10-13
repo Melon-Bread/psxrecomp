@@ -1192,11 +1192,16 @@ int main(int argc, char** argv) {
     check(PSXRecompV4::mod_runtime_initialize(disc_root,"READER",0,{},&error),"reader initialize");
     check(PSXRecompV4::mod_runtime_commit(iso_path,&error),"reader mount original ISO");
     uint32_t bytes=0;
+    static unsigned host_read_progress = 0;
+    mod_runtime_set_progress_hook([] { ++host_read_progress; });
     check(psx_mod_read_disc_file("S0/LEVEL.NSF",nullptr,0,&bytes) && bytes==3000,"query original nested file size");
     std::vector<uint8_t> result(3000);
     check(!psx_mod_read_disc_file("S0/LEVEL.NSF",result.data(),2999,&bytes) && bytes==0,"undersized destination rejected");
+    check(host_read_progress == 0, "size query and rejected destination do not report reading");
     check(psx_mod_read_disc_file("S0/LEVEL.NSF",result.data(),(uint32_t)result.size(),&bytes) &&
           bytes==3000 && std::equal(result.begin(),result.end(),iso.begin()+22*2048),"complete original file bytes");
+    check(host_read_progress >= 2, "whole-file plugin reads report progress and completion");
+    mod_runtime_set_progress_hook(nullptr);
     check(!psx_mod_read_disc_file("S0/MISSING.NSF",nullptr,0,&bytes) && bytes==0,"missing file explicit");
     check(!psx_mod_read_disc_file("S0",nullptr,0,&bytes),"directory rejected");
     std::vector<uint8_t> raw_iso(24*2352);
