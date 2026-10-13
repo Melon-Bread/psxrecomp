@@ -13,6 +13,24 @@
 #define SECTOR 400
 static uint8_t base[MEMCARD_SIZE], saved[MEMCARD_SIZE];
 static int loads, save_reject, load_reject, have_tail[2];
+static uint32_t large_size;
+
+static int large_load(int card, const uint8_t* raw, const uint8_t* tail, uint32_t size) {
+    CHECK(card == 0 || card == 1);
+    CHECK(raw[0] == 'M' && raw[1] == 'C');
+    CHECK(size == (card == 0 ? large_size : 0));
+    for (uint32_t i = 0; i < size; ++i) CHECK(tail[i] == 'X');
+    return 0;
+}
+
+static int large_save(int card, const uint8_t* raw, uint8_t* tail, uint32_t capacity) {
+    CHECK(raw[0] == 'M' && raw[1] == 'C');
+    CHECK(capacity == MEMCARD_EXTENSION_MAX);
+    if (card != 0) return 0;
+    CHECK(large_size <= capacity);
+    memset(tail, 'X', large_size);
+    return (int)large_size;
+}
 
 static long file_size(const char* path) {
     FILE* f = fopen(path, "rb");
@@ -132,6 +150,28 @@ int main(void) {
     CHECK(memcmp(base, saved, sizeof base) == 0);
     load_reject = 0;
     CHECK(memcard_reload_bound() == 0);
+
+    /* The former cap, its first new byte, and the exact new cap all survive
+     * both an absent codec and a codec refresh/reload, byte for byte. */
+    const uint32_t sizes[] = {65536u, 65537u, MEMCARD_EXTENSION_MAX};
+    for (unsigned i = 0; i < sizeof sizes / sizeof sizes[0]; ++i) {
+        large_size = sizes[i];
+        memcard_set_extension_codec(NULL, NULL);
+        CHECK(memcard_format_file(PATH0) == 0);
+        append_tail(large_size);
+        CHECK(memcard_reload_bound() == 0);
+        write_sector(83);
+        memcard_flush(0);
+        CHECK(memcard_last_flush_result(0) == 0 && !dirty());
+        CHECK(file_size(PATH0) == (long)(MEMCARD_SIZE + large_size));
+        memcard_set_extension_codec(large_load, large_save);
+        CHECK(memcard_reload_bound() == 0);
+        write_sector(84);
+        memcard_flush(0);
+        CHECK(memcard_last_flush_result(0) == 0 && !dirty());
+        CHECK(file_size(PATH0) == (long)(MEMCARD_SIZE + large_size));
+        CHECK(memcard_reload_bound() == 0);
+    }
 
     /* Oversized tails cannot be accidentally replaced with a shorter image. */
     memcard_set_extension_codec(NULL, NULL);

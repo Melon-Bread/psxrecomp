@@ -10,7 +10,7 @@ extern "C" {
 #define MEMCARD_SIZE         (128 * 1024)   /* 128KB per card */
 #define MEMCARD_SECTOR_SIZE  128
 #define MEMCARD_SECTORS      1024
-#define MEMCARD_EXTENSION_MAX 65536u
+#define MEMCARD_EXTENSION_MAX 131072u
 
 /* Optional game-owned metadata after the standard 128KiB image. The serial
  * device and raw export see only the standard image. A missing codec preserves
