@@ -434,6 +434,18 @@ if(BUILD_TESTING)
                 --output "${CMAKE_CURRENT_BINARY_DIR}/gl-fmv-chroma-results")
         set_tests_properties(gl_fmv_chroma_test PROPERTIES
             LABELS "gpu;opengl;hardware" TIMEOUT 180 SKIP_RETURN_CODE 77)
+        # Debug present ring: GL names do not outlive a renderer restart.
+        add_test(NAME gl_present_ring_restart_test
+            COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/run_gl_texture_filter.py"
+                --debug-tools
+                --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_gl_present_ring_restart.c"
+                --cc "${CMAKE_C_COMPILER}"
+                --sdl-include "$<TARGET_PROPERTY:SDL3::Headers,INTERFACE_INCLUDE_DIRECTORIES>"
+                --sdl-library "$<TARGET_FILE:SDL3::SDL3-static>"
+                --output "${CMAKE_CURRENT_BINARY_DIR}/gl-present-ring-restart-results")
+        set_tests_properties(gl_present_ring_restart_test PROPERTIES
+            LABELS "gpu;opengl;hardware" TIMEOUT 180 SKIP_RETURN_CODE 77)
     endif()
     add_executable(launcher_device_roundtrip_test
         tests/test_launcher_device_roundtrip.cpp)
@@ -1910,6 +1922,13 @@ if(BUILD_TESTING)
         if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
             set_tests_properties(package_appimage_test PROPERTIES DISABLED TRUE)
         endif()
+        # The Linux release's bundled tcc + musl headers build and load a real
+        # shard with nothing from the host (x86_64 Linux; skips elsewhere).
+        add_test(NAME linux_tcc_bundle_smoke_test
+                 COMMAND ${Python3_EXECUTABLE}
+                         ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_linux_tcc_bundle_smoke.py)
+        set_tests_properties(linux_tcc_bundle_smoke_test PROPERTIES
+            SKIP_RETURN_CODE 77 TIMEOUT 900)
         # Overlay shards and BIOS modules are compiled for the RUNTIME's
         # architecture: an x86_64 macOS runtime under Rosetta used to get arm64
         # shards (arm64-only Xcode clang, no -arch) in its macos-x64 cache and
